@@ -1,0 +1,94 @@
+slug: endpoint
+name: endpoint
+do:
+  - set:
+      name: page
+      value: '{% {{query.page}} || 1 %}'
+  - getPrompts:
+      page: '{{query.page}}'
+      output: items
+  - set:
+      name: filtered
+      value: []
+  - set:
+      name: perPage
+      value: 10
+  - set:
+      name: from
+      value: '{% ({{page}} - 1) * {{perPage}} %}'
+  - set:
+      name: to
+      value: '{% {{page}} * {{perPage}} %}'
+  - repeat:
+      'on': '{{items}}'
+      do:
+        - conditions:
+            '{{$index}} >= {{from}} and {{$index}} < {{to}}':
+              - set:
+                  name: filtered
+                  type: push
+                  value: '{{item}}'
+  - set:
+      name: keys
+      value: []
+  - repeat:
+      'on': '{{filtered}}'
+      do:
+        - conditions:
+            '{{item.id}}':
+              - set:
+                  name: keys
+                  type: push
+                  value: '{{item.id}}'
+  - Counters.find:
+      query:
+        key:
+          $in: '{{keys}}'
+      output: counters
+  - repeat:
+      'on': '{{filtered}}'
+      do:
+        - set:
+            name: filteredCurrentIndex
+            value: '{{$index}}'
+        - set:
+            name: usagesCount
+            value: 0
+        - repeat:
+            'on': '{{counters}}'
+            do:
+              - conditions:
+                  '{{item.key}} == {{filtered[{{filteredCurrentIndex}}].id}}':
+                    - set:
+                        name: usagesCount
+                        value: '{% {{item.usagesCount}} || 0 %}'
+        - conditions:
+            '{{installations}} > 1':
+              - set:
+                  name: label
+                  value:
+                    fr: Utilisations
+                    en: Usages
+            default:
+              - set:
+                  name: label
+                  value:
+                    fr: Utilisation
+                    en: Usage
+        - set:
+            name: filtered[{{filteredCurrentIndex}}].counters
+            value:
+              - icon: star
+                label: '{{label}}'
+                count: '{{usagesCount}}'
+validateArguments: true
+output:
+  items: '{{filtered}}'
+  total: '{{items.length}}'
+  page: '{{page}}'
+  perPage: '{{perPage}}'
+  onSelect:
+    url: '{{global.apiUrl}}/workspaces/scvLB6_/webhooks/increment'
+  selection: single
+when:
+  endpoint: true

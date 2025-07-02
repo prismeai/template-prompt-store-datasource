@@ -1,0 +1,18 @@
+slug: increment
+name: increment
+do:
+  - conditions:
+      '!{{body.id}}':
+        - break: {}
+  - Counters.updateOne:
+      query:
+        key: '{{body.id}}'
+      data:
+        $inc:
+          usagesCount: 1
+      options:
+        upsert: true
+validateArguments: true
+when:
+  endpoint: true
+output: null

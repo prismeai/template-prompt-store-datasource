@@ -1,0 +1,36 @@
+slug: getPrompts
+name: getPrompts
+do:
+  - set:
+      name: prompt
+      value:
+        icon: active
+        title:
+          fr: Un example de prompt
+          en: A sample prompt
+        description:
+          fr: Un exemple de prompt
+          en: An sample of prompt
+        author: Prisme.ai
+        updatedAt: '2025-06-25'
+        value:
+          input: Just answer "42" to anything.
+        id: 1
+  - set:
+      name: prompts
+      value: []
+  - repeat:
+      until: 40
+      do:
+        - set:
+            name: newPrompt
+            value: '{{prompt}}'
+        - set:
+            name: newPrompt.id
+            value: prompt_{% {{item}} + 1 %}
+        - set:
+            name: prompts
+            type: push
+            value: '{{newPrompt}}'
+validateArguments: true
+output: '{{prompts}}'
